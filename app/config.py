@@ -13,4 +13,8 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+
 settings = Settings()
