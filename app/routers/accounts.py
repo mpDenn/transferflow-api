@@ -1,14 +1,13 @@
-import secrets
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.account import Account
 from app.models.user import User
 from app.schemas.account import AccountCreate, AccountRead
-from sqlalchemy import select
+
+from app.services.account_service import create_account, get_accounts
 
 router = APIRouter(
     prefix="/accounts",
@@ -16,30 +15,18 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=AccountRead, status_code=status.HTTP_201_CREATED)
-def create_account(
+def create_account_endpoint(
     account_data:AccountCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
     ):
 
-    while True:
-        account_number = f"{secrets.randbelow(10**12):012d}"
+    return create_account(account_data, db, current_user)
 
-        existing_number = db.execute(
-            select(Account).where(Account.account_number == account_number)
-            ).scalars().first()
+@router.get("/", response_model=list[AccountRead])
+def get_accounts_endpint(
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+        ):
 
-        if not existing_number:
-            break
-
-    accunt = Account(
-        user_id=current_user.id,
-        account_number=account_number,
-        currency=account_data.currency.upper()
-    )
-
-    db.add(accunt)
-    db.commit()
-    db.refresh(accunt)
-
-    return accunt
+    return get_accounts(db, current_user)

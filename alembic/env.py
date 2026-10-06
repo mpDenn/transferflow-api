@@ -5,6 +5,8 @@ from sqlalchemy import pool
 
 from alembic import context
 
+from app.models.transfer import Transfer
+
 from app.database import Base, DATABASE_URL
 from app.models.user import User
 from app.models.account import Account
