@@ -5,7 +5,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.transfer import TransferCreate, TransferRead
-from app.services.transfer_service import create_transfer
+from app.services.transfer_service import create_transfer, get_user_transfers
 
 router = APIRouter(
     prefix="/transfers",
@@ -66,3 +66,11 @@ def create_transfer_endpoint(
             detail=message
         )
     return result
+
+@router.get("/", response_model=list[TransferRead])
+def get_user_transfers_endpoint(
+    db:Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+    ):
+
+    return get_user_transfers(db, current_user)

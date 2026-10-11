@@ -194,7 +194,28 @@ def create_transfer(
     db.refresh(transfer)
     return transfer
 
+def get_user_transfers(
+        db:Session,
+        current_user: User
+        ) -> list[Transfer]:
 
+    account_ids = db.execute(
+        select(Account.id)
+        .where(Account.user_id == current_user.id)
+        ).scalars().all()
+
+    user_transfers = db.execute(
+        select(Transfer)
+        .where(
+            or_(
+                Transfer.from_account_id.in_(account_ids),
+                Transfer.to_account_id.in_(account_ids)
+            )
+        )
+        .order_by(Transfer.created_at.desc())
+    ).scalars().all()
+
+    return user_transfers
 
 
 
