@@ -217,5 +217,25 @@ def get_user_transfers(
 
     return user_transfers
 
+def get_user_transfer_by_id(
+        db: Session,
+        current_user: User,
+        transfer_id: int,
+        )-> Transfer | None:
 
+    user_account_ids = db.execute(
+        select(Account.id).where(Account.user_id == current_user.id)
+        ).scalars().all()
 
+    transfer = db.execute(
+        select(Transfer)
+        .where(
+            Transfer.id == transfer_id,
+            or_(
+                Transfer.to_account_id.in_(user_account_ids),
+                Transfer.from_account_id.in_(user_account_ids),
+            ),
+        )
+    ).scalars().first()
+
+    return transfer

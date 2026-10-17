@@ -5,7 +5,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.transfer import TransferCreate, TransferRead
-from app.services.transfer_service import create_transfer, get_user_transfers
+from app.services.transfer_service import create_transfer, get_user_transfers, get_user_transfer_by_id
 
 router = APIRouter(
     prefix="/transfers",
@@ -74,3 +74,25 @@ def get_user_transfers_endpoint(
     ):
 
     return get_user_transfers(db, current_user)
+
+@router.get("/{transfer_id}", response_model=TransferRead)
+def get_user_transfer_by_id_endpoint(
+    transfer_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    ):
+
+    user_transfer = get_user_transfer_by_id(db, current_user, transfer_id)
+
+    if user_transfer is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Transfer not found",
+        )
+
+    return user_transfer
+
+
+
+
+
