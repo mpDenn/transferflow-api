@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -70,10 +70,12 @@ def create_transfer_endpoint(
 @router.get("/", response_model=list[TransferRead])
 def get_user_transfers_endpoint(
     db:Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0)
     ):
 
-    return get_user_transfers(db, current_user)
+    return get_user_transfers(db, current_user, limit=limit, offset=offset)
 
 @router.get("/{transfer_id}", response_model=TransferRead)
 def get_user_transfer_by_id_endpoint(

@@ -196,7 +196,9 @@ def create_transfer(
 
 def get_user_transfers(
         db:Session,
-        current_user: User
+        current_user: User,
+        limit: int,
+        offset: int,
         ) -> list[Transfer]:
 
     account_ids = db.execute(
@@ -213,6 +215,8 @@ def get_user_transfers(
             )
         )
         .order_by(Transfer.created_at.desc())
+        .offset(offset)
+        .limit(limit)
     ).scalars().all()
 
     return user_transfers
