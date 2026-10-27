@@ -8,6 +8,7 @@ from app.schemas.transfer import TransferCreate
 from datetime import datetime, timezone
 from app.models.transfer import Transfer, TransferStatus
 from decimal import Decimal
+from app.models.ledger_entry import LedgerEntry, EntryType
 
 def _get_locked_accounts(transfer_data: TransferCreate, db: Session) ->list[Account]:
 
@@ -175,7 +176,26 @@ def create_transfer(
 
     db.add(transfer)
     try:
+        db.flush()
+
+        debit_entry = LedgerEntry(
+            transfer_id = transfer.id,
+            account_id = from_account.id,
+            entry_type = EntryType.DEBIT,
+            amount = transfer_data.amount
+        )
+        db.add(debit_entry)
+
+        credit_entry = LedgerEntry(
+                transfer_id = transfer.id,
+                account_id = to_account.id,
+                entry_type = EntryType.CREDIT,
+                amount = transfer_data.amount
+                )
+        db.add(credit_entry)
+
         db.commit()
+
     except IntegrityError:
         db.rollback()
         idempotency_result = _check_idempotency(
@@ -189,6 +209,10 @@ def create_transfer(
         if idempotency_result is not None:
             return idempotency_result
 
+        raise
+
+    except Exception:
+        db.rollback()
         raise
 
     db.refresh(transfer)
