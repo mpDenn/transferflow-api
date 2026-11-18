@@ -2,6 +2,10 @@
 
 **A banking-inspired REST API built with Python, FastAPI, PostgreSQL, and SQLAlchemy.**
 
+**[Live demo — Swagger UI](https://transferflow-api-c8k8.onrender.com/docs)**
+
+The demo runs on Render with Neon PostgreSQL. The first request after inactivity may take about a minute.
+
 TransferFlow is a backend portfolio project designed to explore the engineering challenges behind reliable money transfers, transactional consistency, concurrency control, and idempotent API operations.
 
 The application supports user authentication, bank accounts, account-to-account transfers, and a double-entry ledger that records the movement of funds.
@@ -38,6 +42,8 @@ The application supports user authentication, bank accounts, account-to-account 
 | Migrations | Alembic |
 | Database Driver | psycopg 3 |
 | ASGI Server | Uvicorn |
+| Integration Testing | pytest, FastAPI TestClient |
+| Containers | Docker, Docker Compose |
 
 ## Architecture
 
@@ -68,6 +74,9 @@ transferflow-api/
 │   ├── security.py
 │   └── main.py
 ├── alembic/
+├── tests/
+├── Dockerfile
+├── compose.yaml
 ├── requirements.txt
 ├── .env.example
 └── README.md
@@ -326,20 +335,30 @@ The API handles common business errors such as:
 
 ## Getting Started
 
-### Prerequisites
-
-- Python 3.11+
-- PostgreSQL
-- Git
-
-### 1. Clone the Repository
+Clone the repository.
 
 ```bash
 git clone https://github.com/mpDenn/transferflow-api.git
 cd transferflow-api
 ```
 
-### 2. Create a Virtual Environment
+### Run with Docker Compose
+
+With Docker and Docker Compose installed, copy `.env.example` to `.env` and set `JWT_SECRET_KEY` to a randomly generated value. Compose supplies the local PostgreSQL connection settings to the API container.
+
+```bash
+docker compose up -d db
+docker compose run --build --rm api python -m alembic upgrade head
+docker compose up -d
+```
+
+Open [Swagger UI](http://localhost:8000/docs).
+
+### Run with local Python and PostgreSQL
+
+Install Python 3.11+ and PostgreSQL for this setup.
+
+#### 1. Create a Virtual Environment
 
 ```bash
 python -m venv .venv
@@ -357,13 +376,13 @@ Activate on Linux/macOS:
 source .venv/bin/activate
 ```
 
-### 3. Install Dependencies
+#### 2. Install Dependencies
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-### 4. Configure Environment Variables
+#### 3. Configure Environment Variables
 
 Copy `.env.example` to `.env` and configure your local environment:
 
@@ -383,13 +402,13 @@ Create the `transferflow` database in PostgreSQL before running migrations.
 
 Never commit real secrets or passwords.
 
-### 5. Run Database Migrations
+#### 4. Run Database Migrations
 
 ```bash
 python -m alembic upgrade head
 ```
 
-### 6. Start the Application
+#### 5. Start the Application
 
 ```bash
 python -m uvicorn app.main:app --reload
@@ -415,22 +434,29 @@ http://127.0.0.1:8000/openapi.json
 
 **Note:** New accounts start at zero balance. The project does not yet include a deposit endpoint. Successful transfer scenarios require funded accounts in a controlled local development environment.
 
+## Tests
+
+With the local Python setup above, create a separate PostgreSQL database named `transferflow_test` on the server configured in `.env`. The fixtures create the test tables and roll back each test's changes.
+
+```bash
+python -m pytest -q
+```
+
+The suite covers authentication, account ownership, successful transfers and ledger entries, insufficient funds, idempotent retries, conflicting reuse of an idempotency key, and rollback after a simulated ledger write failure.
+
 ## Development Status
 
 The core transfer workflow, JWT authentication, row-level locking, idempotency, ledger entries, and database migrations are implemented.
 
-Manual integration checks have been performed using Swagger UI and PostgreSQL.
+Local Docker Compose startup and public user registration at the Render deployment have been verified.
 
 ### Planned Improvements
 
-- Automated integration tests with pytest.
-- Dedicated test database and isolated fixtures.
-- Concurrent transfer and rollback tests.
+- Concurrent transfer tests using independent PostgreSQL connections.
 - Stronger ledger integrity checks and reconciliation.
 - Controlled account funding workflows.
-- Docker and Docker Compose support.
 - GitHub Actions CI pipeline.
-- Deployment configuration and production hardening.
+- Production hardening.
 
 ## Engineering Focus
 
